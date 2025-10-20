@@ -3,12 +3,19 @@ import logo from '../assets/trading-logo.svg';
 import userStore from "../stores/userStore";
 import Button from './Button';
 
-const navItems = [
+interface NavItem {
+    label: string;
+    aria: string;
+    path: string;
+    profile: string[];
+}
+
+const navItems: NavItem[] = [
     {label: 'Home', aria: 'home', path: '/home', profile: ['default', 'TRADER_SALES', 'MO', 'SUPPORT', 'ADMIN', 'SUPER_USER']},
     {label: 'Trading', aria: 'trade', path: '/trade' , profile: ['TRADER_SALES', 'MO', 'SUPPORT','SUPER_USER']},
     {label: 'Middle Office', aria: 'trades', path: '/middle-office', profile: ["MO"]},
-    {label: 'Support Team', aria: 'support', path: '/support', profile: "SUPPORT"},
-    {label: 'Administrator', aria: 'admin', path: '/admin', profile: "ADMIN"},
+    {label: 'Support Team', aria: 'support', path: '/support', profile: ["SUPPORT"]},
+    {label: 'Administrator', aria: 'admin', path: '/admin', profile: ["ADMIN"]},
 ];
 
 const Navbar = () => {
@@ -47,6 +54,11 @@ const Navbar = () => {
                         aria-label="signout"
                         onClick={() => {
                             localStorage.setItem('authenticated', 'false');
+                            localStorage.removeItem('user');
+                            localStorage.removeItem('userProfile');
+                            sessionStorage.removeItem('authenticated');
+                            userStore.user = null;
+                            userStore.authorization = undefined;
                             navigate('/signin');
                         }}
                     >
