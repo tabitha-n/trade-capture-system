@@ -40,7 +40,7 @@ public class BookServiceTest {
 
         BookDTO dto = new BookDTO();
         dto.setId(1L);
-        
+
         when(bookRepository.findById(1L)).thenReturn(Optional.of(book));
         when(bookMapper.toDto(book)).thenReturn(dto);
         Optional<BookDTO> found = bookService.getBookById(1L);
@@ -55,6 +55,8 @@ public class BookServiceTest {
         BookDTO bookDTO = new BookDTO();
         bookDTO.setId(2L);
         when(bookRepository.save(any(Book.class))).thenReturn(book);
+        when(bookMapper.toEntity(bookDTO)).thenReturn(book);
+        when(bookMapper.toDto(book)).thenReturn(bookDTO);
 
         BookDTO saved = bookService.saveBook(bookDTO);
         assertNotNull(saved);
