@@ -24,12 +24,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.technicalchallenge.dto.TradeDTO;
 import com.technicalchallenge.dto.TradeLegDTO;
+import com.technicalchallenge.model.Book;
+import com.technicalchallenge.model.Counterparty;
+import com.technicalchallenge.model.Schedule;
 import com.technicalchallenge.model.Trade;
 import com.technicalchallenge.model.TradeLeg;
+import com.technicalchallenge.model.TradeStatus;
 import com.technicalchallenge.repository.CashflowRepository;
 import com.technicalchallenge.repository.TradeLegRepository;
 import com.technicalchallenge.repository.TradeRepository;
 import com.technicalchallenge.repository.TradeStatusRepository;
+import com.technicalchallenge.repository.BookRepository;
+import com.technicalchallenge.repository.CounterpartyRepository;
+import com.technicalchallenge.repository.ScheduleRepository;
 
 @ExtendWith(MockitoExtension.class)
 class TradeServiceTest {
@@ -48,6 +55,15 @@ class TradeServiceTest {
 
     @Mock
     private AdditionalInfoService additionalInfoService;
+
+    @Mock
+    private BookRepository bookRepository;
+
+    @Mock
+    private CounterpartyRepository counterpartyRepository;
+
+    @Mock
+    private ScheduleRepository scheduleRepository;
 
     @InjectMocks
     private TradeService tradeService;
@@ -77,11 +93,34 @@ class TradeServiceTest {
         trade = new Trade();
         trade.setId(1L);
         trade.setTradeId(100001L);
+        trade.setVersion(1);
     }
 
     @Test
     void testCreateTrade_Success() {
-        // Given
+        // When we run the line of code 'BookRepository.findByBookName', return a valid Book object called 'book'
+        Book book = new Book();
+        book.setBookName("Test Book");
+        tradeDTO.setBookName("Test Book");
+        when(bookRepository.findByBookName(any(String.class))).thenReturn(Optional.of(book));
+
+        // When we run the line of code 'additionalInfoService.getCounterpartyByName', return a valid Counterparty object called 'counterparty'
+        Counterparty counterparty = new Counterparty();
+        counterparty.setName("Test Counterparty");
+        tradeDTO.setCounterpartyName("Test Counterparty");
+        when(counterpartyRepository.findByName(any(String.class))).thenReturn(Optional.of(counterparty));
+
+
+        TradeStatus tradeStatus= new TradeStatus();
+        tradeStatus.setTradeStatus("NEW");
+        tradeDTO.setTradeStatus("NEW");
+        when(tradeStatusRepository.findByTradeStatus("NEW")).thenReturn(Optional.of(tradeStatus));
+
+        TradeLeg savedLeg = new TradeLeg();
+        savedLeg.setLegId(1L);
+        when(tradeLegRepository.save(any(TradeLeg.class))).thenReturn(savedLeg);
+
+         // Given
         when(tradeRepository.save(any(Trade.class))).thenReturn(trade);
 
         // When
@@ -104,7 +143,7 @@ class TradeServiceTest {
         });
 
         // This assertion is intentionally wrong - candidates need to fix it
-        assertEquals("Wrong error message", exception.getMessage());
+        assertEquals("Start date cannot be before trade date", exception.getMessage());
     }
 
     @Test
@@ -152,6 +191,10 @@ class TradeServiceTest {
         when(tradeStatusRepository.findByTradeStatus("AMENDED")).thenReturn(Optional.of(new com.technicalchallenge.model.TradeStatus()));
         when(tradeRepository.save(any(Trade.class))).thenReturn(trade);
 
+        TradeLeg savedLeg = new TradeLeg();
+        savedLeg.setLegId(1L);
+        when(tradeLegRepository.save(any(TradeLeg.class))).thenReturn(savedLeg);
+
         // When
         Trade result = tradeService.amendTrade(100001L, tradeDTO);
 
@@ -176,16 +219,40 @@ class TradeServiceTest {
     // This test has a deliberate bug for candidates to find and fix
     @Test
     void testCashflowGeneration_MonthlySchedule() {
-        // This test method is incomplete and has logical errors
-        // Candidates need to implement proper cashflow testing
+        Book book = new Book();
+        book.setBookName("Test Book");
+        tradeDTO.setBookName("Test Book");
+        when(bookRepository.findByBookName(any(String.class))).thenReturn(Optional.of(book));
 
-        // Given - setup is incomplete
+        // When we run the line of code 'additionalInfoService.getCounterpartyByName', return a valid Counterparty object called 'counterparty'
+        Counterparty counterparty = new Counterparty();
+        counterparty.setName("Test Counterparty");
+        tradeDTO.setCounterpartyName("Test Counterparty");
+        when(counterpartyRepository.findByName(any(String.class))).thenReturn(Optional.of(counterparty));
+
+
+        TradeStatus tradeStatus= new TradeStatus();
+        tradeStatus.setTradeStatus("NEW");
+        tradeDTO.setTradeStatus("NEW");
+        when(tradeStatusRepository.findByTradeStatus("NEW")).thenReturn(Optional.of(tradeStatus));
+
+         // Given
+        when(tradeRepository.save(any(Trade.class))).thenReturn(trade);
+
+        Schedule schedule = new Schedule();
+        schedule.setSchedule("1M");
+
         TradeLeg leg = new TradeLeg();
+        leg.setLegId(1L);
         leg.setNotional(BigDecimal.valueOf(1000000));
+        leg.setCalculationPeriodSchedule(schedule);
+        when(tradeLegRepository.save(any(TradeLeg.class))).thenReturn(leg);
 
         // When - method call is missing
 
-        // Then - assertions are wrong/missing
-        assertEquals(1, 12); // This will always fail - candidates need to fix
+        Trade saved = tradeService.createTrade(tradeDTO);
+
+        assertNotNull(saved);
+        verify(cashflowRepository, times(24)).save(any()); // Expecting 12 monthly cashflows for each leg so 12 * 2 = 24
     }
 }
