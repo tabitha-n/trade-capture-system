@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.technicalchallenge.dto.BookDTO;
+import com.technicalchallenge.mapper.BookMapper;
 import com.technicalchallenge.model.Book;
 import com.technicalchallenge.repository.BookRepository;
 
@@ -27,6 +28,8 @@ import com.technicalchallenge.repository.BookRepository;
 public class BookServiceTest {
     @Mock
     private BookRepository bookRepository;
+    @Mock
+    private BookMapper bookMapper;
     @InjectMocks
     private BookService bookService;
 
@@ -34,7 +37,12 @@ public class BookServiceTest {
     void testFindBookById() {
         Book book = new Book();
         book.setId(1L);
+
+        BookDTO dto = new BookDTO();
+        dto.setId(1L);
+
         when(bookRepository.findById(1L)).thenReturn(Optional.of(book));
+        when(bookMapper.toDto(book)).thenReturn(dto);
         Optional<BookDTO> found = bookService.getBookById(1L);
         assertTrue(found.isPresent());
         assertEquals(1L, found.get().getId());
@@ -47,6 +55,8 @@ public class BookServiceTest {
         BookDTO bookDTO = new BookDTO();
         bookDTO.setId(2L);
         when(bookRepository.save(any(Book.class))).thenReturn(book);
+        when(bookMapper.toEntity(bookDTO)).thenReturn(book);
+        when(bookMapper.toDto(book)).thenReturn(bookDTO);
 
         BookDTO saved = bookService.saveBook(bookDTO);
         assertNotNull(saved);
