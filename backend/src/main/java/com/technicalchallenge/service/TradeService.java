@@ -10,6 +10,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +89,61 @@ public class TradeService {
         logger.debug("Retrieving trade by id: {}", tradeId);
         return tradeRepository.findByTradeIdAndActiveTrue(tradeId);
     }
+
+    public List<Trade> searchTrades(String counterpartyName, String bookName,
+            String traderName, String status, LocalDate startDate,
+            LocalDate endDate) {
+        logger.info("Searching trades with provided criteria");
+        // Step 1: Get all trades (you could optimize later)
+        List<Trade> allTrades = tradeRepository.findAll();
+
+        // Step 2: Filter them using Java Stream API
+        return allTrades.stream()
+                .filter(trade -> counterpartyName == null || 
+                                 trade.getCounterparty().getName().equalsIgnoreCase(counterpartyName))
+                .filter(trade -> bookName == null || 
+                                 trade.getBook().getBookName().equalsIgnoreCase(bookName))
+                .filter(trade -> traderName == null || 
+                                 trade.getTradeInputterUser().getFirstName().equalsIgnoreCase(traderName))
+                .filter(trade -> status == null || 
+                                 trade.getTradeStatus().getTradeStatus().equalsIgnoreCase(status))
+                .filter(trade -> startDate == null || 
+                                 !trade.getTradeDate().isBefore(startDate))
+                .filter(trade -> endDate == null || 
+                                 !trade.getTradeDate().isAfter(endDate))
+                .toList();
+    }   
+
+    public Page<Trade> filterTrades(String counterpartyName, String bookName,
+            String traderName, String status, LocalDate startDate,
+            LocalDate endDate, Pageable pageable) {
+        logger.info("Searching trades with provided criteria");
+        // Step 1: Get all trades (you could optimize later)
+        List<Trade> allTrades = tradeRepository.findAll();
+
+        // Step 2: Filter them using Java Stream API
+        List<Trade> filtered = allTrades.stream()
+                .filter(trade -> counterpartyName == null || 
+                                 trade.getCounterparty().getName().equalsIgnoreCase(counterpartyName))
+                .filter(trade -> bookName == null || 
+                                 trade.getBook().getBookName().equalsIgnoreCase(bookName))
+                .filter(trade -> traderName == null || 
+                                 trade.getTradeInputterUser().getFirstName().equalsIgnoreCase(traderName))
+                .filter(trade -> status == null || 
+                                 trade.getTradeStatus().getTradeStatus().equalsIgnoreCase(status))
+                .filter(trade -> startDate == null || 
+                                 !trade.getTradeDate().isBefore(startDate))
+                .filter(trade -> endDate == null || 
+                                 !trade.getTradeDate().isAfter(endDate))
+                .toList();
+        // Step 3: Convert filtered list to a Page manually
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filtered.size());
+        List<Trade> pageContent = filtered.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, filtered.size());
+
+    }   
 
     @Transactional
     public Trade createTrade(TradeDTO tradeDTO) {

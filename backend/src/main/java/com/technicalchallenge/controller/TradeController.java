@@ -1,10 +1,13 @@
 package com.technicalchallenge.controller;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +19,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import com.technicalchallenge.dto.TradeDTO;
 import com.technicalchallenge.mapper.TradeMapper;
@@ -30,6 +36,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/trades")
@@ -78,6 +86,95 @@ public class TradeController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/search")
+    @Operation(
+        summary = "Search trades by criteria",
+        description = "Searches for trades based on provided criteria such as counterparty name, book name, trader name, trade date range, and status."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Trades matching criteria retrieved successfully",
+            content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TradeDTO.class))
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid search criteria"),
+        @ApiResponse(responseCode = "500", description = "Internal server error during search")
+    })
+    public ResponseEntity<List<TradeDTO>> searchTrades(
+        @RequestParam(required = false) String counterpartyName,
+        @RequestParam(required = false) String bookName,
+        @RequestParam(required = false) String traderName,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) 
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam(required = false) 
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ){
+        // Calling search trades from the Service layer to return a TradeDTO object that we give back to the frontend
+        List<Trade> trades = tradeService.searchTrades(
+            counterpartyName,
+            bookName,
+            traderName,
+            status,
+            startDate,
+            endDate
+        );
+
+        List<TradeDTO> tradeDTOs = trades.stream()
+            .map(tradeMapper::toDto)
+            .toList();
+
+        return ResponseEntity.ok(tradeDTOs);
+        
+    }
+
+    @GetMapping("/filter")
+    @Operation(
+        summary = "Search trades by criteria",
+        description = "Searches for trades based on provided criteria such as counterparty name, book name, trader name, trade date range, and status."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Trades matching criteria retrieved successfully",
+            content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = TradeDTO.class))
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid search criteria"),
+        @ApiResponse(responseCode = "500", description = "Internal server error during search")
+    })
+    public ResponseEntity<List<TradeDTO>> filterTrades(
+        @RequestParam(required = false) String counterpartyName,
+        @RequestParam(required = false) String bookName,
+        @RequestParam(required = false) String traderName,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) 
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam(required = false) 
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+        @PageableDefault(size = 50, sort = "startDate", direction = Sort.Direction.DESC) Pageable pageable
+    ){
+        // Calling search trades from the Service layer to return a TradeDTO object that we give back to the frontend
+        Page<Trade> trades = tradeService.filterTrades(
+            counterpartyName,
+            bookName,
+            traderName,
+            status,
+            startDate,
+            endDate,
+            pageable
+        );
+
+        List<TradeDTO> tradeDTOs = trades.stream()
+            .map(tradeMapper::toDto)
+            .toList();
+
+        return ResponseEntity.ok(tradeDTOs);
+        
+    }
+
 
     @PostMapping
     @Operation(summary = "Create new trade",
