@@ -2,6 +2,7 @@ package com.technicalchallenge.controller;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,6 +176,77 @@ public class TradeController {
         
     }
 
+    @GetMapping("/my-trades")
+    @Operation(summary = "Trader's personal trades",
+               description = "Retrieves trades for a specific trader based on their identity.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Trade found and returned successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = TradeDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Trade not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid trade ID format")
+    })
+    public ResponseEntity<List<TradeDTO>> getMyTrades(
+            @Parameter(description = "Unique identifier of the trade", required = true)
+            @PathVariable Long id) {
+        logger.debug("Fetching trade by id: {}", id);
+        List<Trade> trades = tradeService.findTradesByTrader(id);
+        if (trades.isEmpty()) {
+            return ResponseEntity.notFound().build(); // or noContent()
+        }
+        List<TradeDTO> dtoList = trades.stream()
+                                    .map(tradeMapper::toDto)
+                                    .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @GetMapping("/book/{id}/trades")
+    @Operation(summary = "Book-level trade aggregation",
+               description = "Retrieves trades for a specific book id.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Trade found and returned successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = TradeDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Trade not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid trade ID format")
+    })
+    public ResponseEntity<List<TradeDTO>> getTradesByBook(
+            @Parameter(description = "Unique identifier of the trade", required = true)
+            @PathVariable Long id) {
+        logger.debug("Fetching trade by id: {}", id);
+        List<Trade> trades = tradeService.findTradesByBook(id);
+        if (trades.isEmpty()) {
+            return ResponseEntity.notFound().build(); // or noContent()
+        }
+        List<TradeDTO> dtoList = trades.stream()
+                                    .map(tradeMapper::toDto)
+                                    .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @GetMapping("/summary")
+    @Operation(summary = "Trade portfolio summaries",
+               description = "Retrieves and summarises trades based status, currency, trade type, counterparty and risk exposure.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Trade found and returned successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = TradeDTO.class))),
+        @ApiResponse(responseCode = "404", description = "Trade not found"),
+        @ApiResponse(responseCode = "400", description = "Invalid trade ID format")
+    })
+    public ResponseEntity<List<TradeDTO>> getSummary(
+            @Parameter(description = "Unique identifier of the trade", required = true)
+            @PathVariable Long id) {
+        logger.debug("Fetching trade by id: {}", id);
+        List<Trade> trades = tradeService.findTradesByTrader(id);
+        if (trades.isEmpty()) {
+            return ResponseEntity.notFound().build(); // or noContent()
+        }
+        List<TradeDTO> dtoList = trades.stream()
+                                    .map(tradeMapper::toDto)
+                                    .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
+    }
 
     @PostMapping
     @Operation(summary = "Create new trade",
