@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -89,6 +90,18 @@ public class TradeService {
         logger.debug("Retrieving trade by id: {}", tradeId);
         return tradeRepository.findByTradeIdAndActiveTrue(tradeId);
     }
+
+    public List<Trade> findTradesByTrader(Long loginId) {
+        // 
+        Specification<Trade> spec = (root, q, criteriaBuilder) -> criteriaBuilder.equal(root.get("traderUser").get("loginId"), loginId);
+        return tradeRepository.findAll(spec);
+    }
+
+    public List<Trade> findTradesByBook(Long bookId) {
+        Specification<Trade> spec = (root, q, criteriaBuilder) -> criteriaBuilder.equal(root.get("book").get("id"), bookId);
+        return tradeRepository.findAll(spec);
+    }
+    
 
     public List<Trade> searchTrades(String counterpartyName, String bookName,
             String traderName, String status, LocalDate startDate,
