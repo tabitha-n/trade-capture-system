@@ -646,7 +646,7 @@ public class TradeService {
 
         if ("Fixed".equals(legType)) {
             double notional = leg.getNotional().doubleValue();
-            double rate = leg.getRate();
+            double rate = leg.getRate()/100.0;
             double months = monthsInterval;
 
             double result = (notional * rate * months) / 12;
