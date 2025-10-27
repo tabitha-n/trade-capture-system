@@ -10,7 +10,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Optional;
@@ -18,6 +20,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,7 +28,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.technicalchallenge.dto.TradeDTO;
 import com.technicalchallenge.dto.TradeLegDTO;
 import com.technicalchallenge.model.Book;
+import com.technicalchallenge.model.Cashflow;
 import com.technicalchallenge.model.Counterparty;
+import com.technicalchallenge.model.LegType;
 import com.technicalchallenge.model.Schedule;
 import com.technicalchallenge.model.Trade;
 import com.technicalchallenge.model.TradeLeg;
@@ -37,6 +42,7 @@ import com.technicalchallenge.repository.TradeStatusRepository;
 import com.technicalchallenge.repository.BookRepository;
 import com.technicalchallenge.repository.CounterpartyRepository;
 import com.technicalchallenge.repository.ScheduleRepository;
+import com.technicalchallenge.repository.LegTypeRepository;;
 
 @ExtendWith(MockitoExtension.class)
 class TradeServiceTest {
@@ -64,6 +70,9 @@ class TradeServiceTest {
 
     @Mock
     private ScheduleRepository scheduleRepository;
+
+    @Mock
+    private LegTypeRepository legTypeRepository;
 
     @InjectMocks
     private TradeService tradeService;
@@ -254,5 +263,95 @@ class TradeServiceTest {
 
         assertNotNull(saved);
         verify(cashflowRepository, times(24)).save(any()); // Expecting 12 monthly cashflows for each leg so 12 * 2 = 24
+    }
+
+    // Unit test for the private method 'calculateCashflowValue'
+    @Test
+    void testCalculateCashflowValue_FixedLeg_ShouldPassWithoutException() throws Exception {
+        // Arrange
+        TradeLeg leg = new TradeLeg();
+        leg.setNotional(BigDecimal.valueOf(10_000_000)); // 1,000,000 notional
+        leg.setRate(3.5);                              // 3.5% interest rate
+
+        LegType fixedType = new LegType();
+        fixedType.setType("Fixed");
+        leg.setLegRateType(fixedType);
+
+        // Access private method via reflection
+        Method method = TradeService.class.getDeclaredMethod("calculateCashflowValue", TradeLeg.class, int.class);
+        method.setAccessible(true);
+
+        // Act
+        BigDecimal result = (BigDecimal) method.invoke(tradeService, leg, 3); // Quarterly (3 months)
+        result = result.setScale(2, RoundingMode.HALF_UP);
+
+        // Assert
+        BigDecimal expected = BigDecimal.valueOf(87_500.0).setScale(2, RoundingMode.HALF_UP); // 1,000,000 * 0.05 * 3 / 12
+        assertNotNull(result, "Result should not be null");
+        assertEquals(0, expected.compareTo(result), "Calculated value should match expected");
+    }
+
+    // Integration test for cashflow generation
+    @Test
+    void testCashflowGeneration_calculateCashflowValue() {
+        // --- Reference data setup ---
+        Book book = new Book(); book.setBookName("Test Book");
+        tradeDTO.setBookName("Test Book");
+        when(bookRepository.findByBookName("Test Book")).thenReturn(Optional.of(book));
+
+        Counterparty counterparty = new Counterparty(); counterparty.setName("Test Counterparty");
+        tradeDTO.setCounterpartyName("Test Counterparty");
+        when(counterpartyRepository.findByName("Test Counterparty")).thenReturn(Optional.of(counterparty));
+
+        TradeStatus tradeStatus = new TradeStatus(); tradeStatus.setTradeStatus("NEW");
+        tradeDTO.setTradeStatus("NEW");
+        when(tradeStatusRepository.findByTradeStatus("NEW")).thenReturn(Optional.of(tradeStatus));
+
+        Schedule schedule = new Schedule(); schedule.setSchedule("1M");
+        when(scheduleRepository.findBySchedule("1M")).thenReturn(Optional.of(schedule));
+
+        LegType fixed = new LegType();
+        fixed.setType("Fixed");
+        when(legTypeRepository.findByType("Fixed")).thenReturn(Optional.of(fixed));
+
+        // --- Dates: one year apart → 12 monthly payments per leg ---
+        tradeDTO.setTradeDate(LocalDate.of(2025, 1, 1));
+        tradeDTO.setTradeStartDate(LocalDate.of(2025, 1, 1));
+        tradeDTO.setTradeMaturityDate(LocalDate.of(2026, 1, 1));
+
+        // --- Configure both legs: Fixed, monthly, 10M notional, 3.5% rate ---
+        tradeDTO.getTradeLegs().forEach(leg -> {
+            leg.setCalculationPeriodSchedule("1M");
+            leg.setLegType("Fixed");
+            leg.setNotional(BigDecimal.valueOf(10_000_000));
+            leg.setRate(3.5);
+        });
+
+        // --- Mock save behavior ---
+        when(tradeRepository.save(any(Trade.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tradeLegRepository.save(any(TradeLeg.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Capture all saved cashflows
+        ArgumentCaptor<Cashflow> cfCaptor =
+                ArgumentCaptor.forClass(Cashflow.class);
+        when(cashflowRepository.save(cfCaptor.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+        // --- Act ---
+        Trade saved = tradeService.createTrade(tradeDTO);
+
+        // --- Assert count ---
+        assertNotNull(saved);
+        // 1M schedule over 12 months, 2 legs => 24 cashflows total
+        verify(cashflowRepository, times(24)).save(any());
+
+        // --- Assert values ---
+        BigDecimal expected = BigDecimal.valueOf((10_000_000d * 0.035d * 1d) / 12d)
+                                        .setScale(2, RoundingMode.HALF_UP);
+
+        for (Cashflow cf : cfCaptor.getAllValues()) {
+            BigDecimal actual = cf.getPaymentValue().setScale(2, RoundingMode.HALF_UP);
+            assertEquals(0, actual.compareTo(expected),
+                    "Cashflow value should match expected: " + expected + " but got " + actual);
+        }
     }
 }
