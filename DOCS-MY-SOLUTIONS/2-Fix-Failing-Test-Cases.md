@@ -1,4 +1,17 @@
-# 🧪 Test Fix Documentation Summary 
+# 🧪 Step 2: Fix Failing Test Cases - Documentation Summary 
+
+## Task Background and Objective
+The application has several failing test cases that need to to be fixed. 
+
+Task:
+1. Systematically identify and fix failing test cases in the backend application. 
+2. Document the debugging process, understanding of the fixes and the business logic.
+
+This document provides a structured overview of the test fixes implemented.  
+
+The tests are grouped by their corresponding test classes.
+
+Each entry includes the **problem description**, **root cause analysis**, **solution implemented**, and **verification outcome**.  
 
 ## BookServiceTest.java
 
