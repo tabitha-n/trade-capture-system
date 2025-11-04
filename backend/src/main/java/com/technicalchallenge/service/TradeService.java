@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.math.RoundingMode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -638,29 +639,45 @@ public class TradeService {
     }
 
     private BigDecimal calculateCashflowValue(TradeLeg leg, int monthsInterval) {
+
+        // If leg type is missing, return 0.00 as a safe default.
         if (leg.getLegRateType() == null) {
-            return BigDecimal.ZERO;
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);// purpose of 'RoundingMode.HALF_UP' is to ensure consistent decimal places
         }
 
         String legType = leg.getLegRateType().getType();
 
+        // Handle Fixed Leg Rates
         if ("Fixed".equals(legType)) {
-            double notional = leg.getNotional().doubleValue();
-            double rate = leg.getRate()/100.0;
-            double months = monthsInterval;
 
-            double result = (notional * rate * months) / 12;
+             // 1.Get the main trade amount (the notional)
+            BigDecimal notional = leg.getNotional();
 
-            return BigDecimal.valueOf(result);
+            // 2.Convert the rate from percentage to decimal
+            BigDecimal rate = BigDecimal.valueOf(leg.getRate()).divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+
+            /* 3.Calculate the fraction of the year represented by the payment interval
+            For example, for a 3-month interval, this would be 3/12 = 0.25 */
+            BigDecimal months = BigDecimal.valueOf(monthsInterval);
+            BigDecimal yearFraction = months.divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
+
+            // 4.Calculate the cashflow value: Notional * Rate * Year Fraction
+            BigDecimal cashflow = notional.multiply(rate).multiply(yearFraction);
+
+            // 5. Round the final cashflow value to 2 decimal places for currency representation
+            return cashflow.setScale(2, RoundingMode.HALF_UP);
+        
+        // Handle Floating Leg Rates (which will be determined at payment time)    
         } else if ("Floating".equals(legType)) {
-            return BigDecimal.ZERO;
+            return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         }
 
-        return BigDecimal.ZERO;
+        //If it's neither Fixed nor Floating, return 0.00 as a safe default.
+        return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     }
 
     private void validateReferenceData(Trade trade) {
-        // Validate essential reference data is populated
+        // Validate essential reference data is populated   
         if (trade.getBook() == null) {
             throw new RuntimeException("Book not found or not set");
         }
