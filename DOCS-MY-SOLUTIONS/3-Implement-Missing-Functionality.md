@@ -30,22 +30,42 @@ This section provides a high-level summary of how each enhancement was implement
 
 ### 🛡️ Enhancement 2: Comprehensive Trade Validation Engine
 
-| **Category**        | **Details**                                                                                                                                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Problem**         | Trades were being saved without full validation, causing invalid trades and operational risks.                                                                                                                                      |
-| **Goal**            | Build a validation system to ensure trades comply with business rules and user privileges.                                                                                                                                          |
-| **What I Added**    | Created `TradeValidationService` with methods:<br>- `validateTradeBusinessRules()`<br>- `validateUserPrivileges()`<br>- `validateTradeLegConsistency()`<br>- Entity status validation (user, book, counterparty active)             |
-| **Key Features**    | - Date validation: trade, start, maturity dates<br>- User role enforcement: TRADER, SALES, MIDDLE_OFFICE, SUPPORT<br>- Trade leg consistency (pay/receive flags, fixed/floating leg checks)<br>- Reference data validation           |
-| **Example Usage**   | `validateTradeBusinessRules(tradeDTO)`<br>`validateUserPrivileges(userId, "CREATE", tradeDTO)`<br>`validateTradeLegConsistency(tradeLegs)`                                                                                           |
-| **Result / Verification** | Invalid trades are blocked before saving. User privileges are enforced, and trade leg consistency is verified. Verified with: <br>- Unit tests covering all business rules<br>- Role-based validation tests<br>- Edge-case scenarios tested to ensure correct error messages |
+| **Category** | **Details** |
+|--------------|-------------|
+| **Problem** | Trades were being saved without comprehensive validation, resulting in invalid data and operational risk. |
+| **Goal** | Implement a robust validation system ensuring all trades comply with business rules, user privileges, and cross-leg consistency. |
+| **What I Added** | Created `TradeValidationService` implementing:<br>- `validateTradeBusinessRules()`<br>- `validateUserPrivileges()`<br>- `validateTradeLegConsistency()`<br>- Entity status validation (user, book, counterparty active).<br>- `TradeValidationTests.java` minimal unit tests covering all critical business rules and privilege enforcement. |
+| **Key Features** | - Date validation: trade, start, maturity dates.<br>- User role enforcement: TRADER, SALES, MIDDLE_OFFICE, SUPPORT.<br>- Trade leg consistency: pay/receive flags, fixed/floating leg validation.<br>- Reference data validation for active entities. |
+| **Example Usage** | `validateTradeBusinessRules(tradeDTO)`<br>`validateUserPrivileges(userId, "CREATE", tradeDTO)`<br>`validateTradeLegConsistency(tradeLegs)` |
+| **Result / Verification** | Invalid trades are blocked before persistence. Privileges are enforced, and leg consistency verified. Validated through:<br>- Unit tests for all business rules.<br>- Role-based access tests.<br>
+
+#### 🧪 JUnit Test Summary — `TradeValidationServiceTest`
+
+| **Test Name** | **Purpose** | **Expected Result** |
+|----------------|-------------|----------------------|
+| `tradeDateTooOld_shouldFail` | Rejects trades where trade date is more than 30 days old | `"Trade date cannot be more than 30 days in the past"` |
+| `startDateBeforeTradeDate_shouldFail` | Ensures start date is not before trade date | `"Trade start date cannot be before trade date"` |
+| `maturityDateBeforeStartDate_shouldFail` | Ensures maturity date is not before start date | `"Trade maturity date cannot be before start date"` |
+| `traderCanTerminate_shouldPass` | Confirms TRADER can terminate trades | Privilege check returns `true` |
+| `salesCannotTerminate_shouldFail` | Ensures SALES cannot terminate trades | Privilege check returns `false` |
+| `floatingLegWithoutIndex_shouldFail` | Validates that floating legs must include index name or ID | `"Floating leg must have an index specified"` |
+| `fixedLegWithoutRate_shouldFail` | Validates that fixed legs must have a positive rate | `"Fixed leg must have a valid rate"` |
+| `inactiveBook_shouldFail` | Rejects trades with inactive books | `"Book is not active"` |
+| `missingCounterparty_shouldFail` | Rejects trades with missing counterparties | `"Counterparty not found"` |
 
 #### 🔍 Technical Appendix B — Implementation Notes
 **Files Created / Modified**
-- `TradeValidationService.java` → new class implementing all validation logic.
-- `TradeService.java` → integrated validation before persisting trades.
-- Added custom error messages for failed rules to improve business traceability.
+- `TradeValidationService.java` → New validation engine implementing all business rules.  
+- `TradeService.java` → Integrated validation prior to saving trades.  
+- `TradeValidationTests.java` → Added comprehensive JUnit test coverage validating all rule combinations and user privilege scenarios.
+
+**Tests Metadata**
+- **Class:** `TradeValidationServiceTest`  
+- **Framework:** JUnit 5 + Mockito  
+- **IDE Tests:** Run directly via test runner  
 
 ---
+
 
 ### 📊 Enhancement 3: Trader Dashboard and Blotter System
 
