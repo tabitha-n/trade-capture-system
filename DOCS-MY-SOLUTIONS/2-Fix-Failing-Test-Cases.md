@@ -113,13 +113,15 @@ Each entry includes the **problem description**, **root cause analysis**, **solu
 ---
 
 ### testCashflowGeneration_MonthlySchedule
-| **Problem Description** | **Root Cause Analysis** | **Solution Implemented** | **Verification** |
-|--------------------------|-------------------------|---------------------------|------------------|
-| Test was failing because cashflows were not being generated and saved for each leg of the trade. | The repositories (Book, Counterparty, TradeStatus, Trade, TradeLeg) were not mocked, so createTrade() could not run fully and the test failed. | Mocked all required repositories to return valid objects and ensured TradeLegs had a monthly schedule. | Test now passes; confirms that createTrade() generates the correct number of monthly cashflows (24 for 2 legs over 12 months) and saves them. |
 
+| **Category**             | **Details** |
+|--------------------------|-------------|
+| **Problem Description**  | The test was failing because cashflows were not being generated or persisted for each leg of the trade. The assertion `assertEquals(1, 12)` was incorrect and the method call to generate cashflows was missing. |
+| **Root Cause Analysis**  | The test did not mock the necessary repositories (`BookRepository`, `CounterpartyRepository`, `TradeStatusRepository`, `TradeRepository`, `TradeLegRepository`, `CashflowRepository`), so `tradeService.createTrade(tradeDTO)` could not fully execute. Additionally, the `TradeLeg` objects lacked a valid schedule, and the cashflow generation logic was never triggered. |
+| **Solution Implemented** | - Mocked all required repositories to return valid objects:<br> &nbsp;&nbsp;• `BookRepository` returned a `Book`<br> &nbsp;&nbsp;• `CounterpartyRepository` returned a `Counterparty`<br> &nbsp;&nbsp;• `TradeStatusRepository` returned a `TradeStatus`<br> &nbsp;&nbsp;• `TradeRepository` returned a `Trade`<br> &nbsp;&nbsp;• `TradeLegRepository` returned a `TradeLeg` with a monthly schedule<br> &nbsp;&nbsp;• `CashflowRepository` verified for saves<br> - Assigned a `Schedule` of `"1M"` to the `TradeLeg`<br> - Executed `tradeService.createTrade(tradeDTO)` to trigger cashflow creation<br> - Corrected the assertion to verify the total number of cashflows saved: 24 (2 legs × 12 months) |
+| **Verification / Result** | The test now passes. It confirms that `createTrade()` generates monthly cashflows for each trade leg and saves the expected number of cashflows to the repository. The test validates both the correctness of cashflow generation and repository interactions. |
 
-
-
+---
 
 
 
