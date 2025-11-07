@@ -38,3 +38,4 @@ The setup process went smoothly, including cloning the repository, configuring d
 - Implement the daily summary endpoint and `DailySummaryDTO` for more comprehensive dashboard metrics.  
 - Improve my 'Test & Debug' skills.
 
+---
