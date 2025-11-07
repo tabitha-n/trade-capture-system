@@ -6,16 +6,50 @@ This technical challenge is designed to assess your software development skills 
 
 **Duration**: This is a comprehensive challenge that may take several days to complete. You are not expected to finish all steps - each step you complete successfully demonstrates valuable skills.
 
-## Challenge Overview
+## Challenge Overview + Documentation for My Solutions
 
-The challenge consists of **7 progressive steps**, each testing different aspects of software development:
+The challenge consists of **7 progressive steps**, each testing different aspects of software development.
+
+📝 Documentation for my solutions is stored in the `DOCS-MY-SOLUTIONS` folder.
 
 1. **Project Setup** - Environment configuration and basic setup
+
+    🤔 Setup & Project Reflection Summary
+
+        DOCS-MY-SOLUTIONS/1-Setup-&-Project-Reflection-Summary.md
+
+        Detailed reflections, lessons learned, and next steps.
+
 2. **Test Case Fixes** - Debugging and fixing failing tests
+
+    🧪 Fix Failing Test Cases
+    
+        DOCS-MY-SOLUTIONS/2-Fix-Failing-Test-Cases.md
+        
+        Full breakdown of test failures, root causes, solutions, and verification results.
+
 3. **Missing Functionality** - Implementing advanced search, validation, and dashboard features
+
+    🎛️ Implement Missing Functionality
+    
+        DOCS-MY-SOLUTIONS/3-Implement-Missing-Functionality.md
+    
+        Details on enhancements, implementation notes, and test coverage.
+
 4. **Bug Investigation** - Root cause analysis and bug fixing
+
+    🐞 Bug Investigation and Fix
+    
+        DOCS-MY-SOLUTIONS/4-Bug-Investigation-and-Fix.md
+    
+        Root cause analysis, fix details, and verification examples.
+
 5. **Full-Stack Feature** - Settlement instructions implementation
+
+
 6. **Containerization** - Docker and DevOps (OPTIONAL)
+
+
 7. **Cloud Architecture** - Azure design documentation (OPTIONAL - MAGNIFICENT ACHIEVEMENT)
 
 **Important**: Each step builds upon the previous ones, but Steps 5-7 are optional stretch objectives. Success is measured by the quality of your work, not the number of steps completed.
