@@ -1,5 +1,7 @@
 # Reflection on Steps 1–4: Setup, Testing, and Feature Implementation
 
+---
+
 ## Step 1: Local Environment Setup
 The setup process went smoothly, including cloning the repository, configuring dependencies, and running both backend and frontend successfully. The only issue was forgetting to replace `YOUR_USERNAME` with my actual GitHub username, which then required adjusting the H2 database configuration in `application.properties`. I also noticed my Git pushes appeared on both my repository and the academy’s, so I resolved this by setting both the head and base repositories to my own during pull requests.
 
