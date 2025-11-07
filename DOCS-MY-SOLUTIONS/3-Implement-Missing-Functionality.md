@@ -66,7 +66,7 @@
 | **Goal**            | Provide real-time, personalized trade views and summary statistics to support trading decisions.                                                                                                                                  |
 | **What I Added**    | Added endpoints in `TradeController` and supporting methods in `TradeService`:<br>- `/my-trades` – trader’s personal trades<br>- `/book/{id}/trades` – book-level aggregation<br>- `/summary` – portfolio summaries<br>- Created `TradeSummaryDTO`  |
 | **Example Usage**   | `/api/trades/my-trades`<br>`/api/trades/book/5/trades`<br>`/api/trades/summary`<br>                       |
-| **Result** | Traders can see their own trades, book-level activity, and portfolio summaries instantly. |
+| **Result** | Traders can see their own trades. |
 
 #### 🔍 Technical Appendix C — Implementation Notes
 **Files Modified / Created**
