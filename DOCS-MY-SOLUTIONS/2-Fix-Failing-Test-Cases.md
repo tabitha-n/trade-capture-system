@@ -32,7 +32,7 @@ Each entry includes the **problem description**, **root cause analysis**, **solu
 ### testFindBookByNonExistentId
 | **Problem Description** | **Root Cause Analysis** | **Solution Implemented** | **Verification** |
 |--------------------------|-------------------------|---------------------------|------------------|
-| The service should handle cases where a book ID doesn’t exist. | The test didn’t simulate a missing book scenario. | Stubbed `bookRepository.findById()` to return `Optional.empty()` for the non-existent ID. | Test passes; service correctly returns nothing when book isn’t found. |
+| The service should handle cases where a book ID doesn’t exist. | The test failed earlier because the test class was missing the BookMapper mock, so the BookService could not be created properly. | Added the missing BookMapper mock. This allowed Mockito to build the BookService correctly, so the test could run normally. | Test passes; service correctly returns nothing when book isn’t found. |
 
 ---
 
