@@ -113,7 +113,6 @@ class TradeServiceTest {
         tradeDTO.setBookName("Test Book");
         when(bookRepository.findByBookName(any(String.class))).thenReturn(Optional.of(book));
 
-        // When we run the line of code 'additionalInfoService.getCounterpartyByName', return a valid Counterparty object called 'counterparty'
         Counterparty counterparty = new Counterparty();
         counterparty.setName("Test Counterparty");
         tradeDTO.setCounterpartyName("Test Counterparty");
